@@ -1,0 +1,45 @@
+========== Before Return from Subroutine 1 Status=======
+=============Stack Status=============
+Stack contents at 3FF = 307
+Stack contents at 3FE = BA00
+Stack contents at 3FD = 0
+Stack contents at 3FC = 0
+=============Registers & Memory Status=============
+AC = A
+IR = C000
+PC = A09
+REG = A
+Memory 940 = 3
+Memory 941 = 5
+Memory 942 = A
+Number of instructions executed = 16
+
+========== Before Return from Subroutine 2 Status=======
+=============Stack Status=============
+Stack contents at 3FF = 308
+Stack contents at 3FE = BA0A
+Stack contents at 3FD = 0
+Stack contents at 3FC = 0
+=============Registers & Memory Status=============
+AC = 3C
+IR = C000
+PC = A13
+REG = 32
+Memory 940 = 3
+Memory 941 = 5
+Memory 942 = 3C
+Number of instructions executed = 26
+
+======End of Program Status======
+=============Stack Status=============
+Nothing in the stack!
+=============Registers & Memory Status=============
+AC = 50
+IR = F000
+PC = 30D
+REG = 14
+Memory 940 = 3
+Memory 941 = 5
+Memory 942 = 50
+Number of instructions executed = 31
+

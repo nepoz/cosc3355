@@ -22,11 +22,17 @@
         this.addresses[memAddress] = data;
     }
 
-    public void memDump() {
-        for (int i = 0; i < this.addresses.length; i++) {
-            if (this.addresses[i] > 0) {
-                System.out.println(Integer.toHexString(i) + ": " + Integer.toHexString(this.addresses[i]));
-            }
+    public String getStatusString() {
+
+        String status = "";
+        
+        for (int i = 0x940; i <= 0x942; i++) {
+            String memLocation = Integer.toHexString(i).toUpperCase();
+            String cellContents = Integer.toHexString(addresses[i]).toUpperCase();
+
+            status += ("Memory " + memLocation + " = " + cellContents + "\n");
         }
+
+        return status;
     }
  }

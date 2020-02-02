@@ -1,6 +1,9 @@
 import java.util.Scanner;
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.PrintWriter;
 
 /**
  * @author Bishrut Bhattarai
@@ -43,6 +46,19 @@ import java.io.FileNotFoundException;
         this.programCounter = 0x0;
         this.generalReg = 0x0;
         this.memory = new Memory();
+        this.stack = new ExecutionStack();
+    }
+
+    // Utility function to give a status string of registers
+    private String getRegisterStatus() {
+        String status = "";
+
+        status += ("AC = " + Integer.toHexString(this.accumulator).toUpperCase() + "\n");
+        status += ("IR = " + Integer.toHexString(this.instructionReg).toUpperCase()+ "\n");
+        status += ("PC = " + Integer.toHexString(this.programCounter).toUpperCase() + "\n");
+        status += ("REG = " + Integer.toHexString(this.generalReg).toUpperCase() + "\n");
+
+        return status;
     }
 
     // CPU operations that will be called for different opCodes
@@ -142,34 +158,69 @@ import java.io.FileNotFoundException;
      */
     private void divideAccumulatorByGeneralReg() {
 
-        this.accumulator /= this.generalReg;
-        //TODO : Handle invalid division
+        if (this.generalReg != 0) {
+            this.accumulator /= this.generalReg;
+        } else {
+            System.out.println("Fatal error! Division by 0 attempted");
+            System.exit(1);
+        }
     }
 
     private void jumpToSubroutineAt(int memoryAddress) {
 
-        //TODO: Interface with Stack to push existing register values and start executing a subroutine
+        // Preserve current register states
+        this.stack.push(this.programCounter);
+        this.stack.push(this.instructionReg);
+        this.stack.push(this.accumulator);
+        this.stack.push(this.generalReg);
+
+        this.programCounter = memoryAddress;
     }
 
-    private void returnFromSubroutine() {
+    private void returnFromSubroutine(PrintWriter outWriter, int subroutineNum, int instrCount) {
         
-        //TODO: Reset processor state to that before subroutine and continue exectuion
+        // Before we pop stuff off, we need to show values before return
+        outWriter.println("========== Before Return from Subroutine " + subroutineNum +" Status=======");
+        
+        outWriter.println("=============Stack Status=============");
+        outWriter.print(this.stack.getStatusString());
+
+        outWriter.println("=============Registers & Memory Status=============");
+        outWriter.print(getRegisterStatus());
+        outWriter.print(this.memory.getStatusString());
+        outWriter.println("Number of instructions executed = " + instrCount + "\n");
+
+        // Restore program state using values at the top of the stack
+        // Stack has to be popped in opposite order to how we pushed
+        this.generalReg = this.stack.pop();
+        this.accumulator = this.stack.pop();
+        this.instructionReg = this.stack.pop();
+        this.programCounter = this.stack.pop();
     }
 
-    private void halt() {
+    private void halt(PrintWriter outWriter, int instrCount) {
         
-        //TODO: safely stop execution and exit the program
+        outWriter.println("======End of Program Status======");
+        
+        outWriter.println("=============Stack Status=============");
+        outWriter.print(this.stack.getStatusString());
+
+        outWriter.println("=============Registers & Memory Status=============");
+        outWriter.print(getRegisterStatus());
+        outWriter.print(this.memory.getStatusString());
+        outWriter.println("Number of instructions executed = " + instrCount + "\n");    
     }
 
 
     private int retrieveOpCode(int instruction) {
         
-        String instructionBinary = Integer.toBinaryString(instruction);
+        String instructionHex = Integer.toHexString(instruction);
+        String opCodeHex = instructionHex.substring(0,1);
 
         // We have 4 bit opcodes, so the first 4 bits make up the opcode
-        String opCode = instructionBinary.substring(0, 5);
+        int opCode =  Integer.parseInt(opCodeHex, 16);
 
-        return Integer.parseInt(opCode, 2);
+        return opCode;
     }
 
     private int retrieveAddress(int instruction) {
@@ -220,23 +271,30 @@ import java.io.FileNotFoundException;
             }
         }
 
-        // Test to see if our shit is where we want for it to be
-        //this.memory.memDump();
+        scan.close();
     }
 
     // Fetch - execute cycle
-    public void run(String fileName) throws FileNotFoundException {
+    public void run(String fileName) throws FileNotFoundException, IOException {
 
         // First, we need to load the user program into the main memory
         loadUserProgramToMemory(fileName);
 
+        // Going to open our PrintWiter for output reporting
+        FileWriter outStream = new FileWriter("output.txt");
+        PrintWriter outWriter = new PrintWriter(outStream);
+
+
         // Now we continue executing until we encounter a "halt" opcode
         boolean halt = false;
+        int subCount = 0;
+        int instructionsExecuted = 0;
+
         while (!halt) {
             
             this.instructionReg = this.memory.retrieveContents(this.programCounter++);
             int opCode = retrieveOpCode(this.instructionReg);
-            int address = retrieveAddress(this.instructionReg); 
+            int address = retrieveAddress(this.instructionReg);
 
             switch(opCode) {
 
@@ -272,25 +330,30 @@ import java.io.FileNotFoundException;
                     break;
                 case JUMP_TO_SUBROUT:
                     jumpToSubroutineAt(address);
+                    subCount += 1;
                     break;
                 case RET_FRM_SUBROUT:
-                    returnFromSubroutine();
+                    returnFromSubroutine(outWriter, subCount, instructionsExecuted + 1);
                     break;
                 case HALT:
-                    halt();
+                    halt(outWriter, instructionsExecuted + 1);
                     halt = true;
                     break;
                 default:
-                    System.out.println("Fatal error, opcode not recognized");
+                    System.out.println("Fatal error, opcode " + Integer.toBinaryString(opCode) + " not recognized");
                     System.exit(1);
             }
+
+            instructionsExecuted++;
         }
+
+        outWriter.close();
     }
 
 
-    public static void main(String[] args) throws FileNotFoundException {
+    public static void main(String[] args) throws FileNotFoundException, IOException {
         
         CPU cpu = new CPU();
-        cpu.execute("C:\\Users\\Bish\\cosc3355\\simple_execution\\input.txt");
+        cpu.run("C:\\Users\\Bish\\cosc3355\\simple_execution\\input.txt");
     }
  }
