@@ -287,7 +287,8 @@ import java.io.PrintWriter;
 
         // Now we continue executing until we encounter a "halt" opcode
         boolean halt = false;
-        int subCount = 0;
+        int subRoutinesStarted = 0;
+        int subRoutinesFinished = 0;
         int instructionsExecuted = 0;
 
         while (!halt) {
@@ -330,10 +331,11 @@ import java.io.PrintWriter;
                     break;
                 case JUMP_TO_SUBROUT:
                     jumpToSubroutineAt(address);
-                    subCount += 1;
+                    subRoutinesStarted += 1;
                     break;
                 case RET_FRM_SUBROUT:
-                    returnFromSubroutine(outWriter, subCount, instructionsExecuted + 1);
+                    returnFromSubroutine(outWriter, (subRoutinesStarted - subRoutinesFinished), instructionsExecuted + 1);
+                    subRoutinesFinished += 1;
                     break;
                 case HALT:
                     halt(outWriter, instructionsExecuted + 1);
@@ -354,6 +356,6 @@ import java.io.PrintWriter;
     public static void main(String[] args) throws FileNotFoundException, IOException {
         
         CPU cpu = new CPU();
-        cpu.run("C:\\Users\\Bish\\cosc3355\\simple_execution\\input.txt");
+        cpu.run("input.txt");
     }
  }
