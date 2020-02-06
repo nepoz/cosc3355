@@ -10,6 +10,8 @@ import java.util.Stack;
  * @author Bishrut Bhattarai
  * 
  * This class is a simple representation of a CPU
+ * Code is unoptimized: many, MANY times slower than an actual CPU
+ * (The code is in Java, so not a good start)
  */
 
  public class CPU {
@@ -67,7 +69,7 @@ import java.util.Stack;
     /**
      * Retrieves data from a location in the main memory and stores it in the accumulator
      * 
-     * @param memoryAddress: The memory address that accumulator is being loaded from.
+     * @param memoryAddress: The memory address that the accumulator is being loaded from.
      */
     private void loadAccumulatorFromMemory(int memoryAddress) {
 
@@ -162,7 +164,7 @@ import java.util.Stack;
         if (this.generalReg != 0) {
             this.accumulator /= this.generalReg;
         } else {
-            System.out.println("Fatal error! Division by 0 attempted");
+            System.err.println("Fatal error! Division by 0 attempted");
             System.exit(1);
         }
     }
@@ -213,6 +215,12 @@ import java.util.Stack;
     }
 
 
+    /**
+     * Passed a 16 bit Hex instruction, extracts opCode (returned as int)
+     * 
+     * @param instruction: The hexadecimal instruction sequence being parsed.
+     * @return Opcode as an int.
+     */
     private int retrieveOpCode(int instruction) {
         
         String instructionHex = Integer.toHexString(instruction);
@@ -240,13 +248,13 @@ import java.util.Stack;
      * needs to be in the main memory.
      * 
      * @param fileName: The name of the file that contains user program
-     * @throws FileNotFoundException if specified file is not in the directory
+     * @throws FileNotFoundException if specified path cannot be found
      */
     private void loadUserProgramToMemory(String fileName) throws FileNotFoundException {
 
         File input = new File(fileName);
         Scanner scan = new Scanner(input);
-        int numInstructions = 0;
+        int numInstructions = 0;                // Need this as a flag so that the mem location of the first instruction can be stored in the PC.
 
 
         while (scan.hasNextLine()) {
@@ -290,8 +298,18 @@ import java.util.Stack;
         boolean halt = false;
         int subRoutineCount = 0;
         int instructionsExecuted = 0;
+
+        /** 
+         * This is a stack unique to this hypothetical machine. It helps keep track of the order
+         * in which subroutines are being returned. It is critical for the output.txt file to be readable
+         * regardless of how many subroutines must be handled.
+         * 
+         * There is a big tradeoff in performance, as this stack's size is dynamic, and it's a Java object. But,
+         * it is the best solution I can think of right now to ensure the output is readable.
+        */
         Stack<Integer> subRoutineStack = new Stack<Integer>();
 
+        // Exit condition: A HALT opcode is encountered
         while (!halt) {
             
             this.instructionReg = this.memory.retrieveContents(this.programCounter++);
@@ -342,7 +360,7 @@ import java.util.Stack;
                     halt = true;
                     break;
                 default:
-                    System.out.println("Fatal error, opcode " + Integer.toBinaryString(opCode) + " not recognized");
+                    System.err.println("Fatal error, opcode " + Integer.toBinaryString(opCode) + " not recognized");
                     System.exit(1);
             }
 
@@ -356,6 +374,7 @@ import java.util.Stack;
     public static void main(String[] args) throws FileNotFoundException, IOException {
         
         CPU cpu = new CPU();
+        
         String inPath = args[0];
         String outPath = args[1];
 
