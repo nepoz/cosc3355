@@ -4,6 +4,7 @@ import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.util.Stack;
 
 /**
  * @author Bishrut Bhattarai
@@ -234,7 +235,7 @@ import java.io.PrintWriter;
     }
 
     /**
-     * Loads the program passed by the user in "input.txt" into the main memory.
+     * Loads the program passed by the user in a txt file into the main memory.
      * This simulates how computers would start the execution of a user program; it first
      * needs to be in the main memory.
      * 
@@ -275,21 +276,21 @@ import java.io.PrintWriter;
     }
 
     // Fetch - execute cycle
-    public void run(String fileName) throws FileNotFoundException, IOException {
+    public void run(String inPath, String outPath) throws FileNotFoundException, IOException {
 
         // First, we need to load the user program into the main memory
-        loadUserProgramToMemory(fileName);
+        loadUserProgramToMemory(inPath);
 
         // Going to open our PrintWiter for output reporting
-        FileWriter outStream = new FileWriter("output.txt");
+        FileWriter outStream = new FileWriter(outPath);
         PrintWriter outWriter = new PrintWriter(outStream);
 
 
         // Now we continue executing until we encounter a "halt" opcode
         boolean halt = false;
-        int subRoutinesStarted = 0;
-        int subRoutinesFinished = 0;
+        int subRoutineCount = 0;
         int instructionsExecuted = 0;
+        Stack<Integer> subRoutineStack = new Stack<Integer>();
 
         while (!halt) {
             
@@ -330,12 +331,11 @@ import java.io.PrintWriter;
                     divideAccumulatorByGeneralReg();
                     break;
                 case JUMP_TO_SUBROUT:
+                    subRoutineStack.push(++subRoutineCount);
                     jumpToSubroutineAt(address);
-                    subRoutinesStarted += 1;
                     break;
                 case RET_FRM_SUBROUT:
-                    returnFromSubroutine(outWriter, (subRoutinesStarted - subRoutinesFinished), instructionsExecuted + 1);
-                    subRoutinesFinished += 1;
+                    returnFromSubroutine(outWriter, subRoutineStack.pop(), instructionsExecuted + 1);
                     break;
                 case HALT:
                     halt(outWriter, instructionsExecuted + 1);
@@ -356,6 +356,9 @@ import java.io.PrintWriter;
     public static void main(String[] args) throws FileNotFoundException, IOException {
         
         CPU cpu = new CPU();
-        cpu.run("input.txt");
+        String inPath = args[0];
+        String outPath = args[1];
+
+        cpu.run(inPath, outPath);
     }
  }
